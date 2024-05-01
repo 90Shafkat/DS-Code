@@ -2,151 +2,195 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct StudentInfo {
-    char studentName[50];
-    int studentID;
-    char studentDept[50];
-    int studentAge;
-    char studentGender;
-    float studentCGPA;
-    char studentMobile[15];
-};
+typedef struct {
+    char name[50];
+    int id;
+    char department[10];
+    int age;
+    char gender;
+    float cgpa;
+    char mobile[15];
+} Student;
 
-void addNewStudent(struct StudentInfo *info, int *numStudents);
-void findStudent(struct StudentInfo *info, int numStudents);
-void updateStudentInfo(struct StudentInfo *info, int numStudents);
-void displayAll(struct StudentInfo *info, int numStudents);
+typedef struct Node {
+    Student data;
+    struct Node* next;
+} Node;
+
+typedef struct {
+    Node* front;
+    Node* rear;
+} Queue;
+
+void initQueue(Queue* q) {
+    q->front = q->rear = NULL;
+}
+
+int isEmpty(Queue* q) {
+    return (q->front == NULL);
+}
+
+void enqueue(Queue* q, Student student) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = student;
+    newNode->next = NULL;
+    if (isEmpty(q)) {
+        q->front = q->rear = newNode;
+    } else {
+        q->rear->next = newNode;
+        q->rear = newNode;
+    }
+}
+
+Student dequeue(Queue* q) {
+    if (isEmpty(q)) {
+        printf("Queue is empty.\n");
+        exit(1);
+    }
+    Node* temp = q->front;
+    Student data = temp->data;
+    q->front = q->front->next;
+    free(temp);
+    return data;
+}
+
+void storeStudent(Queue* cseQueue, Queue* eeeQueue) {
+    Student newStudent;
+    printf("Enter student name: ");
+    scanf("%s", newStudent.name);
+    printf("Enter student ID: ");
+    scanf("%d", &newStudent.id);
+    printf("Enter student department (CSE/EEE): ");
+    scanf("%s", newStudent.department);
+    printf("Enter student age: ");
+    scanf("%d", &newStudent.age);
+    printf("Enter student gender (M/F): ");
+    scanf(" %c", &newStudent.gender);
+    printf("Enter student CGPA: ");
+    scanf("%f", &newStudent.cgpa);
+    printf("Enter student mobile number: ");
+    scanf("%s", newStudent.mobile);
+
+    if (strcmp(newStudent.department, "CSE") == 0)
+        enqueue(cseQueue, newStudent);
+    else if (strcmp(newStudent.department, "EEE") == 0)
+        enqueue(eeeQueue, newStudent);
+    else
+        printf("Invalid department!\n");
+}
+
+void searchStudent(Queue* cseQueue, Queue* eeeQueue, int searchID, char searchMobile[]) {
+    Queue* searchQueue;
+    if (!isEmpty(cseQueue) && cseQueue->front->data.id == searchID) {
+        searchQueue = cseQueue;
+    } else if (!isEmpty(eeeQueue) && eeeQueue->front->data.id == searchID) {
+        searchQueue = eeeQueue;
+    } else if (!isEmpty(cseQueue) && strstr(cseQueue->front->data.mobile, searchMobile) != NULL) {
+        searchQueue = cseQueue;
+    } else if (!isEmpty(eeeQueue) && strstr(eeeQueue->front->data.mobile, searchMobile) != NULL) {
+        searchQueue = eeeQueue;
+    } else {
+        printf("Student not found.\n");
+        return;
+    }
+
+    printf("Student found:\n");
+    printf("Name: %s\nID: %d\nDepartment: %s\nAge: %d\nGender: %c\nCGPA: %.2f\nMobile: %s\n",
+           searchQueue->front->data.name, searchQueue->front->data.id, searchQueue->front->data.department,
+           searchQueue->front->data.age, searchQueue->front->data.gender, searchQueue->front->data.cgpa,
+           searchQueue->front->data.mobile);
+}
+
+void updateStudent(Queue* cseQueue, Queue* eeeQueue, int searchID) {
+    Queue* updateQueue;
+    if (!isEmpty(cseQueue) && cseQueue->front->data.id == searchID) {
+        updateQueue = cseQueue;
+    } else if (!isEmpty(eeeQueue) && eeeQueue->front->data.id == searchID) {
+        updateQueue = eeeQueue;
+    } else {
+        printf("Student not found.\n");
+        return;
+    }
+
+    printf("Enter new CGPA: ");
+    scanf("%f", &updateQueue->front->data.cgpa);
+    printf("Enter new mobile number: ");
+    scanf("%s", updateQueue->front->data.mobile);
+    printf("Student information updated successfully.\n");
+}
+
+void displayStudents(Queue* cseQueue, Queue* eeeQueue) {
+    printf("CSE Department Students:\n");
+    if (!isEmpty(cseQueue)) {
+        Node* temp = cseQueue->front;
+        while (temp != NULL) {
+            printf("Name: %s\nID: %d\nDepartment: %s\nAge: %d\nGender: %c\nCGPA: %.2f\nMobile: %s\n\n",
+                   temp->data.name, temp->data.id, temp->data.department,
+                   temp->data.age, temp->data.gender, temp->data.cgpa, temp->data.mobile);
+            temp = temp->next;
+        }
+    } else {
+        printf("No students in CSE Department.\n");
+    }
+
+    printf("EEE Department Students:\n");
+    if (!isEmpty(eeeQueue)) {
+        Node* temp = eeeQueue->front;
+        while (temp != NULL) {
+            printf("Name: %s\nID: %d\nDepartment: %s\nAge: %d\nGender: %c\nCGPA: %.2f\nMobile: %s\n\n",
+                   temp->data.name, temp->data.id, temp->data.department,
+                   temp->data.age, temp->data.gender, temp->data.cgpa, temp->data.mobile);
+            temp = temp->next;
+        }
+    } else {
+        printf("No students in EEE Department.\n");
+    }
+}
 
 int main() {
-    struct StudentInfo students[100]; 
-    int numStudents = 0;
+    Queue cseQueue, eeeQueue;
+    initQueue(&cseQueue);
+    initQueue(&eeeQueue);
     int choice;
+    int searchID;
+    char searchMobile[15];
 
     do {
         printf("\nStudent Management System\n");
-        printf("1. Add new student information\n");
-        printf("2. Find student by ID or mobile number\n");
+        printf("1. Store new student information\n");
+        printf("2. Search student by ID or mobile number\n");
         printf("3. Update student information\n");
         printf("4. Display all students\n");
         printf("5. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
-        switch(choice) {
+        switch (choice) {
             case 1:
-                addNewStudent(students, &numStudents);
+                storeStudent(&cseQueue, &eeeQueue);
                 break;
             case 2:
-                findStudent(students, numStudents);
+                printf("Enter student ID to search: ");
+                scanf("%d", &searchID);
+                printf("Enter student mobile number to search: ");
+                scanf("%s", searchMobile);
+                searchStudent(&cseQueue, &eeeQueue, searchID, searchMobile);
                 break;
             case 3:
-                updateStudentInfo(students, numStudents);
+                printf("Enter student ID to update: ");
+                scanf("%d", &searchID);
+                updateStudent(&cseQueue, &eeeQueue, searchID);
                 break;
             case 4:
-                displayAll(students, numStudents);
+                displayStudents(&cseQueue, &eeeQueue);
                 break;
             case 5:
-                printf("Exiting...\n");
+                printf("Exiting program.\n");
                 break;
             default:
-                printf("Invalid choice. Please enter a number between 1 and 5.\n");
+                printf("Invalid choice. Please try again.\n");
         }
-    } while(choice != 5);
+    } while (choice != 5);
 
     return 0;
-}
-
-void addNewStudent(struct StudentInfo *info, int *numStudents) {
-    if (*numStudents >= 100) {
-        printf("Maximum number of students reached. Cannot add more.\n");
-        return;
-    }
-
-    struct StudentInfo newInfo;
-    printf("Enter student name: ");
-    scanf("%s", newInfo.studentName);
-    printf("Enter student ID: ");
-    scanf("%d", &newInfo.studentID);
-    printf("Enter student department: ");
-    scanf("%s", newInfo.studentDept);
-    printf("Enter student age: ");
-    scanf("%d", &newInfo.studentAge);
-    printf("Enter student gender (M/F): ");
-    scanf(" %c", &newInfo.studentGender);
-    printf("Enter student CGPA: ");
-    scanf("%f", &newInfo.studentCGPA);
-    printf("Enter student mobile number: ");
-    scanf("%s", newInfo.studentMobile);
-
-    info[*numStudents] = newInfo;
-    (*numStudents)++;
-    printf("Student information added successfully.\n");
-}
-
-void findStudent(struct StudentInfo *info, int numStudents) {
-    int choice;
-    printf("Find student by:\n");
-    printf("1. ID\n");
-    printf("2. Mobile Number\n");
-    printf("Enter your choice: ");
-    scanf("%d", &choice);
-
-    if (choice == 1) {
-        int searchID;
-        printf("Enter student ID to find: ");
-        scanf("%d", &searchID);
-        for (int i = 0; i < numStudents; i++) {
-            if (info[i].studentID == searchID) {
-                printf("Student found:\n");
-                printf("Name: %s\nID: %d\nDepartment: %s\nAge: %d\nGender: %c\nCGPA: %.2f\nMobile Number: %s\n", 
-                       info[i].studentName, info[i].studentID, info[i].studentDept, info[i].studentAge, info[i].studentGender,
-                       info[i].studentCGPA, info[i].studentMobile);
-                return;
-            }
-        }
-        printf("Student with ID %d not found.\n", searchID);
-    } else if (choice == 2) {
-        char searchMobile[15];
-        printf("Enter student mobile number to find: ");
-        scanf("%s", searchMobile);
-        for (int i = 0; i < numStudents; i++) {
-            if (strcmp(info[i].studentMobile, searchMobile) == 0) {
-                printf("Student found:\n");
-                printf("Name: %s\nID: %d\nDepartment: %s\nAge: %d\nGender: %c\nCGPA: %.2f\nMobile Number: %s\n", 
-                       info[i].studentName, info[i].studentID, info[i].studentDept, info[i].studentAge, info[i].studentGender,
-                       info[i].studentCGPA, info[i].studentMobile);
-                return;
-            }
-        }
-        printf("Student with mobile number %s not found.\n", searchMobile);
-    } else {
-        printf("Invalid choice.\n");
-    }
-}
-
-void updateStudentInfo(struct StudentInfo *info, int numStudents) {
-    int searchID;
-    printf("Enter student ID to update: ");
-    scanf("%d", &searchID);
-    for (int i = 0; i < numStudents; i++) {
-        if (info[i].studentID == searchID) {
-            printf("Student found. Enter new CGPA: ");
-            scanf("%f", &info[i].studentCGPA);
-            printf("Enter new mobile number: ");
-            scanf("%s", info[i].studentMobile);
-            printf("Student information updated successfully.\n");
-            return;
-        }
-    }
-    printf("Student with ID %d not found.\n", searchID);
-}
-
-void displayAll(struct StudentInfo *info, int numStudents) {
-    printf("List of all students:\n");
-    for (int i = 0; i < numStudents; i++) {
-        printf("Student %d:\n", i+1);
-        printf("Name: %s\nID: %d\nDepartment: %s\nAge: %d\nGender: %c\nCGPA: %.2f\nMobile Number: %s\n\n", 
-               info[i].studentName, info[i].studentID, info[i].studentDept, info[i].studentAge, info[i].studentGender,
-               info[i].studentCGPA, info[i].studentMobile);
-    }
 }
